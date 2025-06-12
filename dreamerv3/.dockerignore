@@ -1,0 +1,7 @@
+logdir*
+scores/
+wandb/
+
+*.py[cod]
+__pycache__/
+dist
