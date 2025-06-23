@@ -8,7 +8,7 @@
 # sudo docker build --build-arg GIT_COMMIT=$(git rev-parse HEAD) --build-arg WANDB_KEY=<wandb_key> --build-arg HF_TOKEN=<hf_token> -f Dockerfile -t spgym_cleanrl:latest .
 
 # 3. Run:
-# sudo docker run -d --rm --gpus '"device=0"' --cpus=16.0 --memory=16g -v ./runs:/sliding-puzzle/runs -v ../sliding-puzzle-env:/sldp bash scripts/sac.sh
+# sudo docker run -d --rm --gpus '"device=0"' --cpus=16.0 --memory=16g -v ./runs:/experiments/runs -v ../sliding-puzzles-gym:/sliding-puzzles-gym bash scripts/sac.sh
 
 # 3. See results:
 # tensorboard --logdir ./runs
@@ -32,7 +32,7 @@ RUN git config --global --add safe.directory "*"
 # Envs
 ENV NUMBA_CACHE_DIR=/tmp
 
-COPY requirements_spgym.txt requirements.txt
+COPY requirements.txt requirements.txt
 RUN pip3 install swig
 RUN pip3 install -r requirements.txt
 
@@ -43,13 +43,13 @@ ENV WANDB_API_KEY=$WANDB_KEY
 ARG HF_TOKEN
 ENV HF_TOKEN=$HF_TOKEN
 
-RUN mkdir /sliding-puzzle
-COPY . /sliding-puzzle
-RUN chown -R 1000:root /sliding-puzzle && chmod -R 775 /sliding-puzzle
-WORKDIR /sliding-puzzle
+RUN mkdir /experiments
+COPY . /experiments
+RUN chown -R 1000:root /experiments && chmod -R 775 /experiments
+WORKDIR /experiments
 
-RUN dos2unix /sliding-puzzle/*.sh
-RUN dos2unix /sliding-puzzle/scripts/*.sh
+RUN dos2unix /experiments/*.sh
+RUN dos2unix /experiments/scripts/*.sh
 
-ENTRYPOINT ["/sliding-puzzle/entrypoint.sh"]
+ENTRYPOINT ["/experiments/entrypoint.sh"]
 CMD ["bash", "scripts/sac.sh"]

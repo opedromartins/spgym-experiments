@@ -92,7 +92,7 @@ defaults:
     dmc: {size: [64, 64], repeat: 2, image: True, camera: -1}
     procgen: {size: [64, 64]}
     loconav: {size: [64, 64], repeat: 2, camera: -1}
-    sldp: {w: 3, image_folder: imagenet-1k, image_pool_size: 1, image_size: [80, 80], use_seed: True, use_logdir: True}
+    spgym: {w: 3, image_folder: imagenet-1k, image_pool_size: 1, image_size: [80, 80], use_seed: True, use_logdir: True}
 
   # Agent
   report: True
@@ -184,9 +184,9 @@ size400m: &size400m
   .*\.depth: 96
   .*\.units: 1536
 
-sldp: &sldp
+spgym: &spgym
   <<: *size12m
-  task: sldp_onehot
+  task: spgym_onehot
   (enc|dec).spaces: 'observation'
   wrapper.length: 1000
   run:
@@ -196,14 +196,14 @@ sldp: &sldp
   replay.size: 300000
   jax.prealloc: False
 
-sldp_image: &sldp_image
-  <<: *sldp
-  task: sldp_image
+spgym_image: &spgym_image
+  <<: *spgym
+  task: spgym_image
   (enc|dec).simple.minres: 5
   (enc|dec).spaces: 'image'
 
-sldp_image_nodec:
-  <<: *sldp_image
+spgym_image_nodec:
+  <<: *spgym_image
   loss_scales:
     dec_cnn: 0.0
     dec_mlp: 0.0

@@ -13,26 +13,26 @@ all_commands=()
 for i in {1..5}; do
   # ONEHOT
   w3
-  all_commands+=("./logdir/dreamer_w3_onehot_${i} --configs sldp")
+  all_commands+=("./logdir/dreamer_w3_onehot_${i} --configs spgym")
   # w4
-  all_commands+=("./logdir/dreamer_w4_onehot_${i} --configs sldp --env.sldp.w 4")
+  all_commands+=("./logdir/dreamer_w4_onehot_${i} --configs spgym --env.spgym.w 4")
 
   # IMAGENET
   # w3
   for pool_size in 1 5 10 20 30 50 100; do
-    all_commands+=("./logdir/dreamer_w3_imagenet_p${pool_size}_${i} --configs sldp_image --env.sldp.image_pool_size ${pool_size}")
+    all_commands+=("./logdir/dreamer_w3_imagenet_p${pool_size}_${i} --configs spgym_image --env.spgym.image_pool_size ${pool_size}")
   done
   # no decoder
   for pool_size in 1 5 10; do # 25 50 100
-    all_commands+=("./logdir/dreamer_w3_imagenet_p${pool_size}_${i} --configs sldp_image_nodec --env.sldp.image_pool_size ${pool_size}")
+    all_commands+=("./logdir/dreamer_w3_imagenet_p${pool_size}_${i} --configs spgym_image_nodec --env.spgym.image_pool_size ${pool_size}")
   done
   # w4
   for pool_size in 1 5 10; do
-    all_commands+=("./logdir/dreamer_w4_imagenet_p${pool_size}_${i} --configs sldp_image --env.sldp.image_pool_size ${pool_size} --env.sldp.w 4")
+    all_commands+=("./logdir/dreamer_w4_imagenet_p${pool_size}_${i} --configs spgym_image --env.spgym.image_pool_size ${pool_size} --env.spgym.w 4")
   done
 done
 for pool_size in 10000 20000 30000; do
-  all_commands+=("./logdir/dreamer_w3_imagenet_p${pool_size}_1 --configs sldp_image --env.sldp.image_pool_size ${pool_size}")
+  all_commands+=("./logdir/dreamer_w3_imagenet_p${pool_size}_1 --configs spgym_image --env.spgym.image_pool_size ${pool_size}")
 done
 
 # ---- DREAMER-SPECIFIC LOGIC

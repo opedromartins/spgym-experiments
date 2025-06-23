@@ -8,7 +8,7 @@
 # 2) Start training:
 #
 #   docker build -f dreamerv3/Dockerfile --build-arg WANDB_KEY=<KEY> -t dreamerv3:latest .
-#   docker run -it --rm --gpus '"device=0"' --cpus=16.0 --memory=16g -v ../sliding-puzzle-env:/sldp -v ./logdir:/app/logdir dreamerv3
+#   docker run -it --rm --gpus '"device=0"' --cpus=16.0 --memory=16g -v ../sliding-puzzles-gym:/sliding-puzzles-gym -v ./logdir:/app/logdir dreamerv3
 #
 # 3) See results:
 #

@@ -9,10 +9,10 @@
 </div>
 <br>
 
-This repository contains the official implementation of experiments for the paper [Sliding Puzzles Gym: A Scalable Benchmark for State Representation in Visual Reinforcement Learning](). This includes PPO, SAC, and DreamerV3 implementations along with scripts to reproduce all results.
+This repository contains the official implementation of experiments for the paper [Sliding Puzzles Gym: A Scalable Benchmark for State Representation in Visual Reinforcement Learning](https://arxiv.org/abs/2410.14038). This includes PPO, SAC, and DreamerV3 implementations along with scripts to reproduce all results.
 
-The code for PPO was adapted from the [CleanRL implementation](https://github.com/vwxyzjn/cleanrl/blob/master/cleanrl/ppo_atari.py), and the code for DreamerV3 was adapted from the [official implementation](https://github.com/danijar/dreamerv3).
-The benchmark environment itself can be found at https://anonymous.4open.science/r/spgym-anonymous-F6FE.
+The code for PPO and SAC was adapted from the [CleanRL implementation](https://github.com/vwxyzjn/cleanrl), and the code for DreamerV3 was adapted from the [official implementation](https://github.com/danijar/dreamerv3).
+The benchmark environment itself can be found [here](https://github.com/bryanoliveira/sliding-puzzles-gym).
 
 ## Requirements
 
@@ -21,8 +21,8 @@ The benchmark environment itself can be found at https://anonymous.4open.science
 To install the Sliding Puzzles Gym (SPGym), run the following commands:
 
 ```bash
-git clone https://anonymous.4open.science/r/spgym-anonymous-F6FE sliding-puzzle-env
-cd sliding-puzzle-env
+git clone https://github.com/bryanoliveira/sliding-puzzles-gym
+cd sliding-puzzles-gym
 pip install -e .
 ```
 
@@ -32,16 +32,22 @@ To use the `imagenet-1k` dataset you will also need to download the dataset from
 sliding-puzzles setup imagenet
 ```
 
+You can also use the `diffusiondb` dataset by running the following command:
+
+```bash
+sliding-puzzles setup diffusiondb
+```
+
 2. Prepare Python environments
 
-Create separate Python environments for Dreamer and PPO. `requirements.txt` can be found inside each correspondent folder, and Dockerfiles are also available. See `dreamer/README.md` and `ppo/README.md` for more details.
+Create separate Python environments for Dreamer and PPO. `requirements.txt` can be found inside each correspondent folder, and Dockerfiles are also available. See `dreamerv3/README.md` and `ppo_sac/README.md` for more details.
 
 ## Training
 
-Scripts for reproducing the paper results can be found in `dreamer/scripts` and `ppo/scripts`. Seeds are generated automatically by the algorithms if not specified. For example, inside `dreamer` or `ppo` folders, run:
+Scripts for reproducing the paper results can be found in `dreamerv3/scripts` and `ppo_sac/scripts`. Seeds are generated automatically by the algorithms if not specified. For example, inside `dreamerv3` folder, run:
 
 ```train
-bash scripts/scale.sh
+bash scripts/run.sh
 ```
 
 ## Results

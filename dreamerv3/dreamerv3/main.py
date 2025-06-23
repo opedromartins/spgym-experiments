@@ -219,7 +219,7 @@ def make_env(config, index, **overrides):
       'bsuite': 'embodied.envs.bsuite:BSuite',
       'memmaze': lambda task, **kw: from_gym.FromGym(
           f'MemoryMaze-{task}-ExtraObs-v0', **kw),
-      'sldp': 'embodied.envs.sldp:SlidingPuzzles',
+      'spgym': 'embodied.envs.spgym:SlidingPuzzles',
   }[suite]
   if isinstance(ctor, str):
     module, cls = ctor.split(':')
@@ -229,7 +229,7 @@ def make_env(config, index, **overrides):
   kwargs.update(overrides)
   if kwargs.pop('use_seed', False):
     kwargs['seed'] = hash((config.seed, index)) % (2 ** 32 - 1)
-    if suite == 'sldp':
+    if suite == 'spgym':
       kwargs['image_pool_seed'] = config.seed
       kwargs['index'] = index
   if kwargs.pop('use_logdir', False):
