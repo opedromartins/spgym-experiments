@@ -12,7 +12,7 @@ cur_instance=$2
 all_commands=()
 for i in {1..5}; do
   # ONEHOT
-  w3
+  # w3
   all_commands+=("./logdir/dreamer_w3_onehot_${i} --configs spgym")
   # w4
   all_commands+=("./logdir/dreamer_w4_onehot_${i} --configs spgym --env.spgym.w 4")
