@@ -26,7 +26,7 @@ cd sliding-puzzles-gym
 pip install -e .
 ```
 
-To use the `imagenet-1k` dataset you will also need to download the dataset from https://huggingface.co/datasets/ILSVRC/imagenet-1k/blob/main/data/val_images.tar.gz and extract it to `<package install location>/imgs/imagenet-1k`. You can do this automatically by running the following command:
+To use the `imagenet-1k` dataset you will need a HuggingFace token with access to https://huggingface.co/datasets/ILSVRC/imagenet-1k. You can download and setup the validation split automatically by running:
 
 ```bash
 sliding-puzzles setup imagenet
