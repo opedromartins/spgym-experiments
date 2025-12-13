@@ -1,5 +1,5 @@
 # 1. Test setup:
-# docker run -it --rm --gpus all pytorch/pytorch:2.0.1-cuda11.7-cudnn8-runtime nvidia-smi
+# docker run -it --rm --gpus all pytorch/pytorch:2.5.1-cuda12.1-cudnn9-devel nvidia-smi
 #
 # If the above does not work, try adding the --privileged flag
 # and changing the command to `sh -c 'ldconfig -v && nvidia-smi'`.
@@ -14,7 +14,7 @@
 # tensorboard --logdir ./runs
 
 # System
-FROM pytorch/pytorch:2.0.1-cuda11.7-cudnn8-runtime
+FROM pytorch/pytorch:2.5.1-cuda12.1-cudnn9-devel
 ARG DEBIAN_FRONTEND=noninteractive
 ENV TZ=America/San_Francisco
 ENV PYTHONUNBUFFERED 1
