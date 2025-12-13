@@ -157,14 +157,23 @@ def make_logger(config):
   step = embodied.Counter()
   logdir = config.logdir
   multiplier = config.env.get(config.task.split('_')[0], {}).get('repeat', 1)
-  logger = embodied.Logger(step, [
+  outputs = [
       embodied.logger.TerminalOutput(config.filter, 'Agent'),
       embodied.logger.JSONLOutput(logdir, 'metrics.jsonl'),
       embodied.logger.JSONLOutput(logdir, 'scores.jsonl', 'episode/score'),
       embodied.logger.TensorBoardOutput(
           logdir, config.run.log_video_fps, config.tensorboard_videos),
-      embodied.logger.WandBOutput(logdir.split("/")[-1], config, config.run.wandb_project_name),
-  ], multiplier)
+  ]
+  # Only add WandB if API key is available
+  try:
+    import wandb
+    if wandb.api.api_key:
+      outputs.append(embodied.logger.WandBOutput(logdir.split("/")[-1], config, config.run.wandb_project_name))
+    else:
+      print("WandB API key not found, skipping WandB logging")
+  except Exception as e:
+    print(f"WandB not available, skipping WandB logging: {e}")
+  logger = embodied.Logger(step, outputs, multiplier)
   return logger
 
 
