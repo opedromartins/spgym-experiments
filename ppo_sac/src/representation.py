@@ -33,6 +33,23 @@ def add_args(parser):
     parser.add_argument("--decoder-decay-weight", type=float, default=0)  # 1e-7 Yarats 2021
     parser.add_argument("--variational-reconstruction", type=bool, action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument("--variational-kl-weight", type=float, default=1e-7)  # Yarats 2021
+    # VQ-VAE arguments
+    parser.add_argument("--use-vq-encoder", type=bool, action=argparse.BooleanOptionalAction, default=False, 
+                        help="Use VQ-VAE instead of VAE for representation learning")
+    parser.add_argument("--vq-codebook-size", type=int, default=512, help="Number of codes in the VQ codebook")
+    parser.add_argument("--vq-codebook-dim", type=int, default=None, 
+                        help="Dimension of codebook vectors (None = same as hidden_size)")
+    parser.add_argument("--vq-commitment-weight", type=float, default=1.0, 
+                        help="Weight for commitment loss in VQ-VAE")
+    parser.add_argument("--vq-decay", type=float, default=0.99, help="EMA decay for VQ codebook updates")
+    parser.add_argument("--vq-use-cosine-sim", type=bool, action=argparse.BooleanOptionalAction, default=False,
+                        help="Use cosine similarity for VQ codebook lookup")
+    parser.add_argument("--vq-threshold-ema-dead-code", type=int, default=2,
+                        help="Threshold for replacing dead codes in VQ codebook")
+    parser.add_argument("--vq-kmeans-init", type=bool, action=argparse.BooleanOptionalAction, default=True,
+                        help="Initialize VQ codebook with kmeans")
+    parser.add_argument("--vq-rotation-trick", type=bool, action=argparse.BooleanOptionalAction, default=True,
+                        help="Use rotation trick for VQ gradients")
     # Data augmentation & contrastive learning
     parser.add_argument("--apply-data-augmentation", type=bool, action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument("--augmentations", type=str, default="grayscale,channel_shuffle")
@@ -133,9 +150,29 @@ class Representation:
         self.num_updates += 1
         self.global_step = global_step
 
-        encoded_obs, mu, logvar = self.encoder(data.observations, return_mu_logvar=True)
+        # Handle VQ-VAE vs VAE encoding
+        if self.args.use_vq_encoder:
+            encoded_obs, vq_commit_loss, vq_indices = self.encoder(
+                data.observations, return_vq_loss=True, return_indices=True
+            )
+            mu = encoded_obs  # For compatibility
+            logvar = None  # Not used in VQ-VAE
+        else:
+            encoded_obs, mu, logvar = self.encoder(data.observations, return_mu_logvar=True)
+            vq_commit_loss = None
+            vq_indices = None
 
         loss = 0
+
+        # VQ-VAE commitment loss and metrics
+        if self.args.use_vq_encoder and vq_commit_loss is not None:
+            vq_loss = self.args.vq_commitment_weight * vq_commit_loss.mean()
+            loss += vq_loss
+            self.log("losses", vq_commitment_loss=vq_loss.item())
+            # Log codebook usage statistics
+            if vq_indices is not None:
+                codebook_usage = self.encoder.get_codebook_usage(vq_indices)
+                self.log("vq", codebook_usage_percent=codebook_usage)
 
         if self.args.repr_decay_weight > 0:
             repr_decay_loss = self.args.repr_decay_weight * encoded_obs.pow(2).mean()
@@ -199,7 +236,8 @@ class Representation:
                 data.observations.reshape(data.observations.shape[0], -1),
                 reduction="none",
             ).sum(dim=-1)
-            if self.args.variational_reconstruction:
+            # VAE uses KL loss; VQ-VAE uses commitment loss (handled above)
+            if self.args.variational_reconstruction and not self.args.use_vq_encoder:
                 kl_loss = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), dim=-1)
                 reconstruction_loss += self.args.variational_kl_weight * kl_loss
                 self.log("losses", reconstruction_kl_loss=kl_loss.mean().item())

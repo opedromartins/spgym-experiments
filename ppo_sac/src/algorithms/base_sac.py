@@ -45,21 +45,52 @@ class SAC:
                 dropout=args.encoder_dropout
             ).to(device)
 
-        self.critic_encoder = models.Encoder(
-            base_encoder,
-            args.hidden_size,
-            variational=args.variational_reconstruction
-        ).to(device)
-        if args.share_encoder:
-            # share cnn but keep separate projection layers
-            self.actor_encoder = models.Encoder(
+        # Choose between VQ encoder and standard VAE/non-variational encoder
+        if args.use_vq_encoder:
+            self.critic_encoder = models.VQEncoder(
+                base_encoder,
+                args.hidden_size,
+                codebook_size=args.vq_codebook_size,
+                codebook_dim=args.vq_codebook_dim,
+                commitment_weight=args.vq_commitment_weight,
+                decay=args.vq_decay,
+                use_cosine_sim=args.vq_use_cosine_sim,
+                threshold_ema_dead_code=args.vq_threshold_ema_dead_code,
+                kmeans_init=args.vq_kmeans_init,
+                rotation_trick=args.vq_rotation_trick,
+            ).to(device)
+            if args.share_encoder:
+                # share cnn but keep separate VQ layer and projection
+                self.actor_encoder = models.VQEncoder(
+                    base_encoder,
+                    args.hidden_size,
+                    codebook_size=args.vq_codebook_size,
+                    codebook_dim=args.vq_codebook_dim,
+                    commitment_weight=args.vq_commitment_weight,
+                    decay=args.vq_decay,
+                    use_cosine_sim=args.vq_use_cosine_sim,
+                    threshold_ema_dead_code=args.vq_threshold_ema_dead_code,
+                    kmeans_init=args.vq_kmeans_init,
+                    rotation_trick=args.vq_rotation_trick,
+                ).to(device)
+            else:
+                self.actor_encoder = copy.deepcopy(self.critic_encoder)
+        else:
+            self.critic_encoder = models.Encoder(
                 base_encoder,
                 args.hidden_size,
                 variational=args.variational_reconstruction
             ).to(device)
-        else:
-            # share nothing
-            self.actor_encoder = copy.deepcopy(self.critic_encoder)
+            if args.share_encoder:
+                # share cnn but keep separate projection layers
+                self.actor_encoder = models.Encoder(
+                    base_encoder,
+                    args.hidden_size,
+                    variational=args.variational_reconstruction
+                ).to(device)
+            else:
+                # share nothing
+                self.actor_encoder = copy.deepcopy(self.critic_encoder)
 
         self.actor = self.make_actor().to(device)
         self.critic = self.make_critic().to(device)

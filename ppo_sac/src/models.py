@@ -5,6 +5,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
+from vector_quantize_pytorch import VectorQuantize
+
 
 def layer_init(m, std=np.sqrt(2)):
 	"""Custom weight init for Conv2D and Linear layers"""
@@ -114,6 +116,100 @@ class Encoder(nn.Module):
         if return_mu_logvar:
             return x, x, None
         return x
+
+
+class VQEncoder(nn.Module):
+    """Vector Quantized Encoder using VQ-VAE approach.
+    
+    Instead of variational sampling (mu, logvar), this encoder uses a discrete
+    codebook to quantize the latent representations.
+    """
+    def __init__(
+        self,
+        base_encoder,
+        hidden_size,
+        codebook_size=512,
+        codebook_dim=None,
+        commitment_weight=1.0,
+        decay=0.99,
+        use_cosine_sim=False,
+        threshold_ema_dead_code=2,
+        kmeans_init=True,
+        rotation_trick=True,
+    ):
+        super().__init__()
+        self.base_encoder = base_encoder
+        self.visual = isinstance(base_encoder, ImageEncoder)
+        self.out_dim = hidden_size
+        self.codebook_size = codebook_size
+        
+        # Codebook dimension can be smaller than hidden_size for better codebook usage
+        self.codebook_dim = codebook_dim if codebook_dim is not None else hidden_size
+        
+        # Projection from base encoder to hidden size
+        if self.visual:
+            self.projection = nn.Sequential(
+                nn.Linear(base_encoder.out_dim, hidden_size),
+                nn.LayerNorm(hidden_size),
+                nn.Tanh()
+            )
+        else:
+            self.projection = nn.Identity()
+        
+        # Vector Quantization layer
+        self.vq = VectorQuantize(
+            dim=hidden_size,
+            codebook_size=codebook_size,
+            codebook_dim=self.codebook_dim,  # Can use smaller codebook dim
+            decay=decay,
+            commitment_weight=commitment_weight,
+            use_cosine_sim=use_cosine_sim,
+            threshold_ema_dead_code=threshold_ema_dead_code,
+            kmeans_init=kmeans_init,
+            rotation_trick=rotation_trick,
+        )
+        
+        self.apply(layer_init)
+        
+    def forward(self, x, detach=False, return_vq_loss=False, return_indices=False):
+        x = self.base_encoder(x)
+        if detach:
+            x = x.detach()
+        x = self.projection(x)
+        
+        # VQ expects shape (batch, sequence, dim) or (batch, dim)
+        # Our x is (batch, hidden_size) so we add sequence dim
+        x_expanded = x.unsqueeze(1)  # (batch, 1, hidden_size)
+        
+        quantized, indices, commit_loss = self.vq(x_expanded)
+        
+        # Remove sequence dimension
+        quantized = quantized.squeeze(1)  # (batch, hidden_size)
+        indices = indices.squeeze(1)  # (batch,)
+        
+        if return_indices:
+            if return_vq_loss:
+                return quantized, commit_loss, indices
+            return quantized, indices
+        
+        if return_vq_loss:
+            return quantized, commit_loss
+        return quantized
+    
+    # For compatibility with code expecting VAE interface
+    def forward_with_mu_logvar(self, x, detach=False):
+        """For compatibility with VAE-style interface.
+        Returns (z, z, commit_loss) where commit_loss replaces logvar."""
+        quantized, commit_loss = self(x, detach=detach, return_vq_loss=True)
+        # Return commit_loss in place of logvar for loss computation
+        return quantized, quantized, commit_loss
+    
+    def get_codebook_usage(self, indices):
+        """Compute percentage of codebook being used."""
+        unique_indices = indices.unique()
+        usage = unique_indices.numel() / self.codebook_size * 100
+        return usage
+
 
 class ImageEncoder(nn.Module):
     def __init__(self, n_channels, min_res, dropout):
